@@ -3,5 +3,5 @@
 
 echo "Updating package index..."
 sudo apt update
-
-!pip install -q ultralytics streamlit
+git clone https://github.com/ultralytics/yolov5
+pip install -q ultralytics streamlit
