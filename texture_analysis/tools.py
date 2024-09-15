@@ -5,7 +5,9 @@ import faiss
 import numpy as np
 from abc import ABC, abstractmethod
 from transformers import AutoImageProcessor, AutoModel
-
+import voyager
+from typing import Union
+import streamlit as st
 
 class BaseModel(ABC):
     @abstractmethod
@@ -18,6 +20,7 @@ class BaseModel(ABC):
 
 
 class DinoV2Model(BaseModel):
+    
     def load_model(self):
         self.device = torch.device('cuda' if torch.cuda.is_available() else "cpu")
         self.model = AutoModel.from_pretrained('facebook/dinov2-small').to(self.device)
@@ -29,14 +32,23 @@ class DinoV2Model(BaseModel):
 
 
 class ImageProcessor:
-    def __init__(self):
+    def __init__(self, get_roi, roi_model):
         self.processor = AutoImageProcessor.from_pretrained('facebook/dinov2-small')
         self.device = torch.device('cuda' if torch.cuda.is_available() else "cpu")
-
+        self.get_roi = get_roi
+        self.roi_model = roi_model
+        
     def load_and_preprocess_image(self, image_path):
-        img = Image.open(image_path).convert('RGB')
-        img_tensor = self.processor(images=img, return_tensors="pt").to(self.device)
-        return img_tensor
+        
+        image_np = Image.open(image_path).convert('RGB')
+        image_np = np.array(image_np)
+        
+        rois, _ = self.get_roi(image_np, self.roi_model)
+        if len(rois)==0:
+            return self.processor(images=image_np, return_tensors="pt").to(self.device)
+        
+        return self.processor(images=rois[0], return_tensors="pt").to(self.device)
+
 
 
 class FaissIndexer:
@@ -57,11 +69,40 @@ class FaissIndexer:
         return D, I
 
 
+class VoyagerIndexer:
+    def __init__(self, embedding_dim, M=12, ef_construction=200, max_elements=1000, space=voyager.Space.Cosine, storage_type=voyager.StorageDataType.Float32):
+        self.embedding_dim = embedding_dim
+        self.space = space
+        self.storage_type = storage_type
+        self.index = voyager.Index(space, embedding_dim, M, ef_construction, max_elements, storage_type)
+
+    def add_embeddings(self, embeddings):
+        for i, embedding in enumerate(embeddings):
+            self.index.add(i, embedding)
+
+    def build(self):
+        self.index.build()
+
+    def save_index(self, index_file_path):
+        self.index.save(index_file_path)
+
+    def load_index(self, index_file_path):
+        # Recreate the index with the necessary parameters
+        self.index = voyager.Index(self.space, self.embedding_dim, M=12, ef_construction=200, max_elements=10000, storage_data_type=self.storage_type)
+        self.index.load(index_file_path)
+
+    def search(self, query_embedding, k=1):
+        return self.index.search(query_embedding, k)
+
+
+
+
+
 class EmbeddingOrchestrator:
-    def __init__(self, model: BaseModel, image_processor: ImageProcessor, faiss_indexer: FaissIndexer):
+    def __init__(self, model: BaseModel, image_processor: ImageProcessor, indexer: Union[FaissIndexer, VoyagerIndexer]):
         self.model = model
         self.image_processor = image_processor
-        self.faiss_indexer = faiss_indexer
+        self.indexer = indexer
 
     def process_images_and_create_index(self, image_paths, index_file_path):
         embeddings = []
@@ -72,29 +113,31 @@ class EmbeddingOrchestrator:
             # Extract & Normalize Embeddings
             embedding = self.model.get_embedding(image_tensor)
             embedding = np.float32(embedding)
-            faiss.normalize_L2(embedding)
+            if isinstance(self.indexer, FaissIndexer):
+                faiss.normalize_L2(embedding)
             embeddings.append(embedding)
 
         
         all_embeddings_np = np.vstack(embeddings)
         
         # Add embeddings to FAISS index and save
-        self.faiss_indexer.add_embeddings(all_embeddings_np)
-        self.faiss_indexer.save_index(index_file_path)
+        self.indexer.add_embeddings(all_embeddings_np)
+        self.indexer.save_index(index_file_path)
 
         return all_embeddings_np
     
     def get_query_embedding(self, image_path):
       
-      image_tensor = self.image_processor.load_and_preprocess_image(image_path=image_path)
-      embedding = self.model.get_embedding(image_tensor)
-      embedding = np.float32(embedding)
-      faiss.normalize_L2(embedding)
+        image_tensor = self.image_processor.load_and_preprocess_image(image_path=image_path)
+        embedding = self.model.get_embedding(image_tensor)
+        embedding = np.float32(embedding)
+        if isinstance(self.indexer, FaissIndexer):
+            faiss.normalize_L2(embedding)
       
-      return embedding
+        return embedding
 
     def perform_search(self, query_embedding, k=1):
-        return self.faiss_indexer.search(query_embedding, k)
+        return self.indexer.search(query_embedding, k)
 
 
 if __name__ == "__main__":

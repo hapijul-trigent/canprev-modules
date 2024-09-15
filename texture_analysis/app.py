@@ -3,38 +3,55 @@ from PIL import Image
 import numpy as np
 import tools  # Import the module containing the logic for image processing and FAISS search
 import os
+from powder_liquid import get_rois, load_model
+import warnings
+
+warnings.filterwarnings(action='ignore')
+
+
+def get_or_create_session_state_variable(key, default_value=None):
+    """
+    Retrieves the value of a variable from Streamlit's session state.
+    If the variable doesn't exist, it creates it with the provided default value.
+
+    Args:
+        key (str): The key of the variable in session state.
+        default_value (Any): The default value to assign if the variable doesn't exist.
+
+    Returns:
+        Any: The value of the session state variable.
+    """
+    if key not in st.session_state:
+        st.session_state[key] = default_value
+    return st.session_state[key]
+
+
+get_or_create_session_state_variable(key='index_generated', default_value=False)
 
 # Initialize components
-model = tools.DinoV2Model()
-model.load_model()
-image_processor = tools.ImageProcessor()
+roi_model = load_model()
+dinoV2Model = tools.DinoV2Model()
+dinoV2Model.load_model()
+image_processor = tools.ImageProcessor(get_roi=get_rois, roi_model=roi_model)
 faiss_indexer = tools.FaissIndexer(embedding_dim=384)
+# voyager_indexer = tools.VoyagerIndexer(embedding_dim=384)
 
 # Load the FAISS index
 index_file_path = 'faiss_index.index'
-images_paths = [
-    'FFP016XD.jpg',
-    'EMP003HN.jpg',
-    'FFP015XD.jpg',
-    'EMF001HN.jpg',
-    'EMD001HN.jpg',
-    'GUP015XD.jpg',
-    'GUP013XD.jpg',
-    'ENS012CX.jpg',
-    'FFP014XD.jpg',
-    'ENS013CX.jpg',
-    'GUP014XD.jpg'
-]
+voyager_index_path = 'voyager_index.voy'
 image_paths = [f'images/{image}' for image in os.listdir('images')]
-print(image_paths)
 
 # Create Embedding Orchestrator
-orchestrator = tools.EmbeddingOrchestrator(model, image_processor, faiss_indexer)
-orchestrator.process_images_and_create_index(image_paths, 'faiss_index.index')
+orchestrator = tools.EmbeddingOrchestrator(dinoV2Model, image_processor, faiss_indexer)
+# orchestrator_voyager = tools.EmbeddingOrchestrator(model, image_processor, voyager_indexer)
+if not os.path.exists('faiss_index.index'):
+    orchestrator.process_images_and_create_index(image_paths, 'faiss_index.index')
+# orchestrator.process_images_and_create_index(image_paths, voyager_index_path)
 faiss_indexer.load_index(index_file_path)
+# voyager_indexer.load_index(voyager_index_path)
 
 # Streamlit App
-st.title("Image Similarity Search")
+st.title("Texture Analysis")
 st.write("Upload an image, and the app will find similar images based on texture.")
 
 # Image uploader
@@ -61,20 +78,18 @@ if uploaded_image is not None:
 
     with col2:
         st.write("Similar textures:")
-
-        # Use a grid layout (2x2) for similar images
-        for i in range(0, 4, 2):  # Loop through 2 images at a time
-            cols = st.columns(2)  # Create two columns in each row
-            for j in range(2):  # Display two images per row
+        for i in range(0, 4, 2):
+            cols = st.columns(2)
+            for j in range(2):
                 if i + j < len(indices[0]):
                     image_index = indices[0][i + j]
                     distance = distances[0][i + j]
-                    image_index_path = images_paths[image_index]
+                    image_index_path = image_paths[image_index]
                     similar_image_path = os.path.join("images/", f"{image_index_path}")
                     print(image_index)
                     similar_image_path = image_paths[image_index]
 
-                    if distance >=0.2:
+                    if distance >=0.33:
                         continue
 
                     if os.path.exists(similar_image_path):
