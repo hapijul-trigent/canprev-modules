@@ -97,7 +97,7 @@ def get_dominant_color_hsv(image, k=4):
 
 def process_image(pill_image_path):
     # Load the YOLOv5 model
-    model = torch.hub.load('/content/yolov5', 'custom', path='/content/best.pt', source='local')
+    model = torch.hub.load('yolov5', 'custom', path='best.pt', source='local')
 
     # Load the image using OpenCV
     img_cv2 = cv2.imread(pill_image_path)
@@ -164,11 +164,11 @@ def process_image(pill_image_path):
             color_name = get_color_name_by_rgb((int(rgb[0]*255), int(rgb[1]*255), int(rgb[2]*255)))
             print(color_name)
 
-            font_scale_shape = 1.5
-            thickness_shape = 4
+            font_scale_shape = 2
+            thickness_shape = 8
+            cv2.putText(img_cv2, f'{shape_label}', (center_x + 10, center_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale_shape, (0, 255, 0), thickness_shape)  # White
+            cv2.putText(img_cv2, f'Color: {color_name[1]}', (center_x + 10, center_y + 60), cv2.FONT_HERSHEY_SIMPLEX, font_scale_shape, (0, 255, 0), thickness_shape)  # White
 
-            cv2.putText(img_cv2, f'{shape_label}', (center_x + 10, center_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale_shape, (0, 255, 0), thickness_shape)
-            cv2.putText(img_cv2, f'Color: {color_name}', (center_x + 10, center_y + 40), cv2.FONT_HERSHEY_SIMPLEX, font_scale_shape, (0, 255, 0), thickness_shape)
         else:
             font_scale_shape = 2.5
             thickness_shape = 6
@@ -207,7 +207,7 @@ def process_image(pill_image_path):
         text_y = text_size[1] + int(20 * font_scale * scale_factor)
 
 
-    cv2.putText(img_cv2, text, (text_x, text_y), font, font_scale, text_color, thickness)
+    # cv2.putText(img_cv2, text, (text_x, text_y), font, font_scale, text_color, thickness)
 
     # Desiccant present annotation
     if desiccant_present:

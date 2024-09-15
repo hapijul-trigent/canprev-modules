@@ -2,6 +2,10 @@
 
 
 echo "Updating package index..."
-sudo apt update
+sudo apt-get install libgl1-mesa-glx
+
+
+# Upgrade pip to the latest version
+pip install --upgrade pip
 git clone https://github.com/ultralytics/yolov5
-pip install -q ultralytics streamlit
+pip install ultralytics streamlit
