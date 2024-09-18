@@ -7,28 +7,6 @@ import texture_analysis.app
 import pill_color_detection.app
 
 
-# Function for cap detection
-def cap_detection(image):
-    st.write("Cap detection functionality goes here.")
-    # You can use OpenCV to detect objects in the image
-    # For now, we are just showing the image
-    st.image(image, caption="Uploaded Image for Cap Detection", use_column_width=True)
-
-# Function for texture analysis
-def texture_analysis_f(image):
-    st.write("Texture analysis functionality goes here.")
-    # Sample method: Convert to grayscale and calculate texture features
-    gray_image = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2GRAY)
-    st.image(gray_image, caption="Grayscale Image for Texture Analysis", use_column_width=True)
-    # Add actual texture analysis code (e.g., Haralick texture features) here
-
-# Function for pill analysis
-def pill_analysis(image):
-    st.write("Pill analysis functionality goes here.")
-    # Sample: Display the image for pill analysis
-    st.image(image, caption="Uploaded Image for Pill Analysis", use_column_width=True)
-    # Add actual pill analysis (e.g., shape, color, imprint analysis) here
-
 favicon = Image.open("CanPrev_4D-logo.png")
 st.set_page_config(
     page_title="Canprev AI",  # Title of the web page
