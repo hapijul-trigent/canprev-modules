@@ -9,6 +9,7 @@ import seal.app
 import transparent_seal.app
 import dropper_ointment.app
 import cotton_tab
+import dropper_ointment_tab
 
 favicon = Image.open("CanPrev_4D-logo.png")
 st.set_page_config(
@@ -81,7 +82,7 @@ def main():
     
     with tab6:
         st.header("Dropper Ointment")
-        dropper_ointment.app.main()
+        dropper_ointment_tab.panel()
 
     with tab7:
         st.header("Cotton Detection")
