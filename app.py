@@ -2,7 +2,7 @@ import streamlit as st
 import cv2
 import numpy as np
 from PIL import Image
-import neckband_detection.app
+import cap_analysis.app
 import texture_analysis.app
 import pill_color_detection.app
 
@@ -48,7 +48,7 @@ def main():
     # Cap Detection tab
     with tab1:
         st.header("Cap Detection")
-        neckband_detection.app.main()
+        cap_analysis.app.main()
     # Texture Analysis tab
     with tab2:
         st.header("Texture Analysis")
