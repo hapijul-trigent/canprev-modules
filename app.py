@@ -36,7 +36,37 @@ st.set_page_config(
     layout="centered",                       # Layout options: "wide" or "centered"
     initial_sidebar_state="expanded"     # Initial state of the sidebar: "auto", "expanded", or "collapsed"
 )
+st.markdown("""
+    <style>
+       /* change the select box properties */
+        div[data-baseweb="select"]>div {
+        background-color:#fff;
+        border-color:rgb(194, 189, 189);
+        width: 100%;
+    }
 
+    /* change the tag font properties */
+        span[data-baseweb="tag"]>span {
+        color: black;
+        font-size: 17px;
+    }
+    span.st-ae{
+        background-color:  #FCF1C9 ;
+    }
+    
+    .e1q9reml2 {
+        color: #F4FAF3;
+    }
+    
+    .st-fw p{
+        padding: 0.3rem 0.4rem;
+        border-radius: 5px;
+        background-color: #6699cc;
+        color: white;
+    }
+ 
+    </style>
+    """, unsafe_allow_html=True)
 # Main app function
 def main():
     

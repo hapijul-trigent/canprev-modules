@@ -229,19 +229,16 @@ def main():
         with imageORG:
             st.image(uploaded_file, caption='Uploaded Image', use_column_width=True)
 
-        if st.button('Process'):
-            # Save the uploaded file temporarily
-            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                tmp_file.write(uploaded_file.getvalue())
-                temp_file_path = tmp_file.name
-
-            # Process the image
-            annotated_img = process_image(temp_file_path)
-
-            # Convert OpenCV image (BGR) to PIL Image (RGB)
-            annotated_img_rgb = cv2.cvtColor(annotated_img, cv2.COLOR_BGR2RGB)
-            annotated_pil_image = Image.fromarray(annotated_img_rgb)
-
-            # Display the annotated image
-            with imageAnnotated:
-                st.image(annotated_pil_image, caption='Annotated Image', use_column_width=True)
+    
+        # Save the uploaded file temporarily
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+            tmp_file.write(uploaded_file.getvalue())
+            temp_file_path = tmp_file.name
+        # Process the image
+        annotated_img = process_image(temp_file_path)
+        # Convert OpenCV image (BGR) to PIL Image (RGB)
+        annotated_img_rgb = cv2.cvtColor(annotated_img, cv2.COLOR_BGR2RGB)
+        annotated_pil_image = Image.fromarray(annotated_img_rgb)
+        # Display the annotated image
+        with imageAnnotated:
+            st.image(annotated_pil_image, caption='Annotated Image', use_column_width=True)
