@@ -52,8 +52,6 @@ faiss_indexer.load_index(index_file_path)
 
 def main():
     # Streamlit App
-    st.write("Upload an image, and the app will find similar images based on texture.")
-
     # Image uploader
     uploaded_image = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 

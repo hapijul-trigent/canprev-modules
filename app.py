@@ -8,7 +8,7 @@ import pill_color_detection.app
 import seal.app
 import transparent_seal.app
 import dropper_ointment.app
-
+import cotton_tab
 
 favicon = Image.open("CanPrev_4D-logo.png")
 st.set_page_config(
@@ -18,36 +18,30 @@ st.set_page_config(
     initial_sidebar_state="expanded"     # Initial state of the sidebar: "auto", "expanded", or "collapsed"
 )
 st.markdown("""
-    <style>
-       /* change the select box properties */
-        div[data-baseweb="select"]>div {
-        background-color:#fff;
-        border-color:rgb(194, 189, 189);
-        width: 100%;
+<style>
+
+	.stTabs [data-baseweb="tab-list"] {
+		gap: 3px;
     }
 
-    /* change the tag font properties */
-        span[data-baseweb="tag"]>span {
-        color: black;
-        font-size: 17px;
-    }
-    span.st-ae{
-        background-color:  #FCF1C9 ;
-    }
-    
-    .e1q9reml2 {
-        color: #F4FAF3;
-    }
-    
-    .st-fw p{
-        padding: 0.3rem 0.4rem;
-        border-radius: 5px;
-        background-color: #6699cc;
+	.stTabs [data-baseweb="tab"] {
+		height: 40px;
+        white-space: pre-wrap;
+		background-color: #13276F;
+		border-radius: 4px 4px 0px 0px;
+		gap: 1px;
+		padding: 10px 2px 10px 2px;
         color: white;
     }
- 
-    </style>
-    """, unsafe_allow_html=True)
+
+	.stTabs [aria-selected="true"] {
+  		background-color: #FFFFFF;
+        color: #13276F;
+        border: 2px solid #13276F;
+        border-bottom: none;
+	}
+
+</style>""", unsafe_allow_html=True)
 # Main app function
 def main():
     
@@ -55,8 +49,12 @@ def main():
     st.title("Canprev AI")
     
     # Tabs for different types of analysis
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
-        ["Cap Detection", "Texture Analysis", "Pill Analysis", 'Open Bottle Seal', "Transparent Seal", "Dropper Ointment"]
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
+        [
+            "Cap Detection", "Texture Analysis", "Pill Analysis", 
+            'Open Bottle Seal', "Transparent Seal", "Dropper Ointment",
+            "Cotton Detection"
+        ]
     )
     
     # Cap Detection tab
@@ -85,6 +83,9 @@ def main():
         st.header("Dropper Ointment")
         dropper_ointment.app.main()
 
+    with tab7:
+        st.header("Cotton Detection")
+        cotton_tab.panel()
 
 if __name__ == "__main__":
     main()
