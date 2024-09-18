@@ -29,16 +29,17 @@ def pill_analysis(image):
     st.image(image, caption="Uploaded Image for Pill Analysis", use_column_width=True)
     # Add actual pill analysis (e.g., shape, color, imprint analysis) here
 
-
+favicon = Image.open("CanPrev_4D-logo.png")
 st.set_page_config(
     page_title="Canprev AI",  # Title of the web page
-    page_icon=":camera:",                # Favicon, use emoji or a file path
+    page_icon=favicon,                # Favicon, use emoji or a file path
     layout="centered",                       # Layout options: "wide" or "centered"
     initial_sidebar_state="expanded"     # Initial state of the sidebar: "auto", "expanded", or "collapsed"
 )
 
 # Main app function
 def main():
+    
     st.image('CanPrev_4D-logo.png', width=200)
     st.title("Canprev AI")
     
