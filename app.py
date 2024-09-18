@@ -5,6 +5,7 @@ from PIL import Image
 import cap_analysis.app
 import texture_analysis.app
 import pill_color_detection.app
+import seal.app
 
 
 favicon = Image.open("CanPrev_4D-logo.png")
@@ -52,7 +53,7 @@ def main():
     st.title("Canprev AI")
     
     # Tabs for different types of analysis
-    tab1, tab2, tab3 = st.tabs(["Cap Detection", "Texture Analysis", "Pill Analysis"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Cap Detection", "Texture Analysis", "Pill Analysis", 'Open Bottle Seal Analysis'])
     
     # Cap Detection tab
     with tab1:
@@ -66,6 +67,10 @@ def main():
     with tab3:
         st.header("Pill Analysis")
         pill_color_detection.app.main()
+    
+    with tab4:
+        st.header('Open Bottle Seal Analysis')
+        seal.app.main()
 
 if __name__ == "__main__":
     main()

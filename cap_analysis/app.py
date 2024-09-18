@@ -5,7 +5,7 @@ from PIL import Image
 from .tools import load_neckband_model, detect_neckband 
 
 # Load
-neckband_model = load_neckband_model(model_path='cap_analysis/neckbandModelv8.pt')
+neckband_model = load_neckband_model(model_path='cap_analysis/model_caps.pt')
 
 def main():
 

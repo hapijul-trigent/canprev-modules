@@ -89,7 +89,7 @@ def main():
                         print(image_index)
                         similar_image_path = image_paths[image_index]
 
-                        if distance >=0.33:
+                        if distance >=0.2:
                             continue
 
                         if os.path.exists(similar_image_path):
