@@ -2,20 +2,12 @@ import streamlit as st
 import cv2
 import numpy as np
 from PIL import Image
-from tools import load_neckband_model, detect_neckband 
-
-st.set_page_config(
-    page_title="Neckband Detection",  # Title of the web page
-    page_icon=":camera:",                # Favicon, use emoji or a file path
-    layout="centered",                       # Layout options: "wide" or "centered"
-    initial_sidebar_state="expanded"     # Initial state of the sidebar: "auto", "expanded", or "collapsed"
-)
+from .tools import load_neckband_model, detect_neckband 
 
 # Load
-neckband_model = load_neckband_model(model_path='neckbandModelv8.pt')
+neckband_model = load_neckband_model(model_path='neckband_detection/neckbandModelv8.pt')
 
 def main():
-    st.title("Neckband Detection App")
 
     uploaded_file = st.file_uploader("Choose an image...", type="jpg")
 
@@ -30,7 +22,7 @@ def main():
         with col1:
             st.header("Uploaded Image")
             image_pil = Image.fromarray(image)
-            st.image(image=image, caption='Uploaded Image', use_column_width=True)
+            st.image(image=image, caption='...', use_column_width=True)
         
         with col2:
             # Perform neckband detection
@@ -38,8 +30,8 @@ def main():
             
             # Convert images to PIL format for displaying
             result_image_pil = Image.fromarray(result_image)
-            st.header("Neckband")
-            st.image(result_image_pil, caption='Detected Neckband', use_column_width=True)
+            st.header("Detection")
+            st.image(result_image_pil, caption='...', use_column_width=True)
 
 if __name__ == "__main__":
     main()

@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image
 import tempfile
 import colorsys
-from settings import CUSTOM_CSS3_COLORS_HEX_MAP
+from .settings import CUSTOM_CSS3_COLORS_HEX_MAP
 import webcolors
 
 webcolors._definitions._CSS3_HEX_TO_NAMES.update(CUSTOM_CSS3_COLORS_HEX_MAP)
@@ -29,11 +29,6 @@ def get_color_name_by_rgb(rgb):
                             key=lambda x: sum((v - c) ** 2 for v, c in zip(webcolors.hex_to_rgb(x[0]), rgb)))
         return closest_color
 
-def closest_color_hsv(hsv_color):
-    for color_name, (lower, upper) in PILL_COLORS_HSV.items():
-        if all(lower[i] <= hsv_color[i] <= upper[i] for i in range(3)):
-            return color_name
-    return "unknown"
 
 
 def crop_center(image, crop_width, crop_height):
@@ -68,7 +63,7 @@ def get_dominant_color_hsv(image, k=4):
     resized_image = cv2.resize(blurred_image, (28, 28), interpolation=cv2.INTER_AREA)
 
 
-    st.image(resized_image, channels='BGR')
+    # st.image(resized_image, channels='BGR')
     # Convert image to HSV color space
     hsv_image = cv2.cvtColor(resized_image, cv2.COLOR_BGR2HSV)
 
@@ -97,7 +92,7 @@ def get_dominant_color_hsv(image, k=4):
 
 def process_image(pill_image_path):
     # Load the YOLOv5 model
-    model = torch.hub.load('yolov5', 'custom', path='best.pt', source='local')
+    model = torch.hub.load('pill_color_detection/yolov5', 'custom', path='pill_color_detection/best.pt', source='local')
 
     # Load the image using OpenCV
     img_cv2 = cv2.imread(pill_image_path)
@@ -224,8 +219,7 @@ def process_image(pill_image_path):
     return img_cv2
 
 
-if __name__ == '__main__':
-    st.title("Pill Detection and Color Classification")
+def main():
 
     uploaded_file = st.file_uploader("Upload a pill image", type=["jpg", "jpeg", "png"])
 
