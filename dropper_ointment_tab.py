@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 import tools
 # Load
-dropper_ointment_model = tools.load_yolo_model(model_path='models/dropper_ointment.pt')
+dropper_ointment_model = tools.load_yolo_model(model_path='models/model_bottle_dropper_ointment.pt')
 
 def panel():
 

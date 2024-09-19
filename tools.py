@@ -44,6 +44,6 @@ def detect_shoulder(image, model):
     """Perform object detection and return annotated image with highest confidence box only."""
     if image.shape[-1] == 4:
         image = cv2.cvtColor(image, cv2.COLOR_RGBA2RGB)
-    result = model(image)[0]
-    print(result)
-    return result.plot(boxes=False)
+    result = model(image)[0]   
+
+    return result.plot()
