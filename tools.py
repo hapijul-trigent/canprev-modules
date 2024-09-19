@@ -4,7 +4,7 @@ import numpy as np
 import streamlit as st
 from ultralytics import YOLO
 from supervision import Detections, BoxAnnotator, LabelAnnotator, ColorPalette
-
+from PIL import Image
 
 @st.cache_resource(show_spinner=False)
 def load_yolo_model(model_path):
@@ -14,6 +14,8 @@ def load_yolo_model(model_path):
 
 def detect(image, model):
     """Perform object detection and return annotated image with highest confidence box only."""
+    if image.shape[-1] == 4:
+        image = cv2.cvtColor(image, cv2.COLOR_RGBA2RGB)
     result = model(image)[0]
     detections = Detections.from_ultralytics(result)
    
@@ -34,3 +36,14 @@ def detect(image, model):
         return annotated_image
     else:
         return image
+
+
+
+
+def detect_shoulder(image, model):
+    """Perform object detection and return annotated image with highest confidence box only."""
+    if image.shape[-1] == 4:
+        image = cv2.cvtColor(image, cv2.COLOR_RGBA2RGB)
+    result = model(image)[0]
+    print(result)
+    return result.plot(boxes=False)
