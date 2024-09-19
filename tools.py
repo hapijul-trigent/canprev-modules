@@ -23,7 +23,7 @@ def detect(image, model):
         
         # Annotate the highest confidence box
         annotator = BoxAnnotator(color=ColorPalette.ROBOFLOW, thickness=5)
-        label_annotator = LabelAnnotator(text_scale=2, color=ColorPalette.ROBOFLOW, text_thickness=7)
+        label_annotator = LabelAnnotator(text_scale=2, color=ColorPalette.ROBOFLOW, text_thickness=5)
         labels = [
             f"{class_name} {confidence*100:.2f}%"
             for class_name, confidence

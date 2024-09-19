@@ -10,6 +10,7 @@ import transparent_seal.app
 import dropper_ointment.app
 import cotton_tab
 import dropper_ointment_tab
+import powder_liquid_lumps_tab
 
 favicon = Image.open("CanPrev_4D-logo.png")
 st.set_page_config(
@@ -50,11 +51,11 @@ def main():
     st.title("Canprev AI")
     
     # Tabs for different types of analysis
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(
         [
             "Cap Detection", "Texture Analysis", "Pill Analysis", 
             'Open Bottle Seal', "Transparent Seal", "Dropper Ointment",
-            "Cotton Detection"
+            "Cotton Detection", 'Powder-Liquid-Lumps'
         ]
     )
     
@@ -87,6 +88,10 @@ def main():
     with tab7:
         st.header("Cotton Detection")
         cotton_tab.panel()
+    
+    with tab8:
+        st.header("Powder-Liquid-Lumps")
+        powder_liquid_lumps_tab.panel()
 
 if __name__ == "__main__":
     main()

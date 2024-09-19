@@ -216,7 +216,7 @@ def process_image(pill_image_path):
         scope_y = desiccant_y + int(60 * font_scale)  # Adjusted position for better alignment
         cv2.putText(img_cv2, scope_text, (text_x, scope_y), font, font_scale, text_color, thickness)
 
-    return img_cv2
+    return img_cv2, total_pills
 
 
 def main():
@@ -224,21 +224,21 @@ def main():
     uploaded_file = st.file_uploader("Upload a pill image", type=["jpg", "jpeg", "png"])
 
     if uploaded_file is not None:
-        # Show the uploaded image
+        
         imageORG, imageAnnotated = st.columns([1,1], gap='large')
         with imageORG:
             st.image(uploaded_file, caption='Uploaded Image', use_column_width=True)
 
     
-        # Save the uploaded file temporarily
+        
         with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
             tmp_file.write(uploaded_file.getvalue())
             temp_file_path = tmp_file.name
-        # Process the image
-        annotated_img = process_image(temp_file_path)
-        # Convert OpenCV image (BGR) to PIL Image (RGB)
+        
+        annotated_img, total_pills = process_image(temp_file_path)
+        
         annotated_img_rgb = cv2.cvtColor(annotated_img, cv2.COLOR_BGR2RGB)
         annotated_pil_image = Image.fromarray(annotated_img_rgb)
-        # Display the annotated image
+        
         with imageAnnotated:
-            st.image(annotated_pil_image, caption='Annotated Image', use_column_width=True)
+            st.image(annotated_pil_image, caption=f'Total Pills: {total_pills}', use_column_width=True)

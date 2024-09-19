@@ -50,6 +50,7 @@ if not os.path.exists(index_file_path):
 faiss_indexer.load_index(index_file_path)
 # voyager_indexer.load_index(voyager_index_path)
 
+
 def main():
     # Streamlit App
     # Image uploader
