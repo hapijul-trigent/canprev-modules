@@ -10,7 +10,7 @@ import streamlit as st
 # Load the YOLOv5 model
 @st.cache_resource(show_spinner=False)
 def load_model():
-    return torch.hub.load('ultralytics/yolov5', 'custom', path='bestPowderLiquid.pt', force_reload=True)
+    return torch.hub.load('ultralytics/yolov5', 'custom', path='texture_analysis/bestPowderLiquid.pt', force_reload=True)
 if __name__ == '__main__':
     model = load_model()
 

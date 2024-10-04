@@ -1,9 +1,9 @@
 import streamlit as st
 from PIL import Image
 import numpy as np
-import tools  # Import the module containing the logic for image processing and FAISS search
+from .tools import DinoV2Model, ImageProcessor, FaissIndexer, EmbeddingOrchestrator
 import os
-from powder_liquid import get_rois, load_model
+from .powder_liquid import get_rois, load_model
 import warnings
 
 warnings.filterwarnings(action='ignore')
@@ -30,70 +30,69 @@ get_or_create_session_state_variable(key='index_generated', default_value=False)
 
 # Initialize components
 roi_model = load_model()
-dinoV2Model = tools.DinoV2Model()
+dinoV2Model = DinoV2Model()
 dinoV2Model.load_model()
-image_processor = tools.ImageProcessor(get_roi=get_rois, roi_model=roi_model)
-faiss_indexer = tools.FaissIndexer(embedding_dim=384)
+image_processor = ImageProcessor(get_roi=get_rois, roi_model=roi_model)
+faiss_indexer = FaissIndexer(embedding_dim=384)
 # voyager_indexer = tools.VoyagerIndexer(embedding_dim=384)
 
 # Load the FAISS index
-index_file_path = 'faiss_index.index'
+index_file_path = 'texture_analysis/faiss_index.index'
 voyager_index_path = 'voyager_index.voy'
-image_paths = [f'images/{image}' for image in os.listdir('images')]
+image_paths = [f'texture_analysis/images/{image}' for image in os.listdir('texture_analysis/images')]
 
 # Create Embedding Orchestrator
-orchestrator = tools.EmbeddingOrchestrator(dinoV2Model, image_processor, faiss_indexer)
+orchestrator = EmbeddingOrchestrator(dinoV2Model, image_processor, faiss_indexer)
 # orchestrator_voyager = tools.EmbeddingOrchestrator(model, image_processor, voyager_indexer)
-if not os.path.exists('faiss_index.index'):
-    orchestrator.process_images_and_create_index(image_paths, 'faiss_index.index')
+if not os.path.exists(index_file_path):
+    orchestrator.process_images_and_create_index(image_paths, index_file_path=index_file_path)
 # orchestrator.process_images_and_create_index(image_paths, voyager_index_path)
 faiss_indexer.load_index(index_file_path)
 # voyager_indexer.load_index(voyager_index_path)
 
-# Streamlit App
-st.title("Texture Analysis")
-st.write("Upload an image, and the app will find similar images based on texture.")
 
-# Image uploader
-uploaded_image = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+def main():
+    # Streamlit App
+    # Image uploader
+    uploaded_image = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 
-if uploaded_image is not None:
-    
-    col1, col2 = st.columns([1, 1])
+    if uploaded_image is not None:
+        
+        col1, col2 = st.columns([1, 1])
 
-    with col1:
-        image = Image.open(uploaded_image)
-        st.subheader('Uploaded Image')
-        st.image(image, caption="Uploaded Image", use_column_width=True)
-        image.save('temp/temp.jpg')
+        with col1:
+            image = Image.open(uploaded_image)
+            st.subheader('Uploaded Image')
+            st.image(image, caption="Uploaded Image", use_column_width=True)
+            image.save('texture_analysis/temp/temp.jpg')
 
-    
+        
 
-    query_embedding = orchestrator.get_query_embedding(image_path='temp/temp.jpg')
+        query_embedding = orchestrator.get_query_embedding(image_path='texture_analysis/temp/temp.jpg')
 
-    # Perform the FAISS search
-    k = 4 
-    distances, indices = orchestrator.perform_search(query_embedding, k)
+        # Perform the FAISS search
+        k = 4 
+        distances, indices = orchestrator.perform_search(query_embedding, k)
 
 
-    with col2:
-        st.write("Similar textures:")
-        for i in range(0, 4, 2):
-            cols = st.columns(2)
-            for j in range(2):
-                if i + j < len(indices[0]):
-                    image_index = indices[0][i + j]
-                    distance = distances[0][i + j]
-                    image_index_path = image_paths[image_index]
-                    similar_image_path = os.path.join("images/", f"{image_index_path}")
-                    print(image_index)
-                    similar_image_path = image_paths[image_index]
+        with col2:
+            st.write("Similar textures:")
+            for i in range(0, 4, 2):
+                cols = st.columns(2)
+                for j in range(2):
+                    if i + j < len(indices[0]):
+                        image_index = indices[0][i + j]
+                        distance = distances[0][i + j]
+                        image_index_path = image_paths[image_index]
+                        similar_image_path = os.path.join("images/", f"{image_index_path}")
+                        print(image_index)
+                        similar_image_path = image_paths[image_index]
 
-                    if distance >=0.33:
-                        continue
+                        if distance >=0.2:
+                            continue
 
-                    if os.path.exists(similar_image_path):
-                        similar_image = Image.open(similar_image_path)
-                        cols[j].image(similar_image, caption=f"Distance: {distance:.4f}", use_column_width=True)
-                    else:
-                        cols[j].write(f"Image {similar_image_path} not found.")
+                        if os.path.exists(similar_image_path):
+                            similar_image = Image.open(similar_image_path)
+                            cols[j].image(similar_image, caption=f"Distance: {distance:.4f}", use_column_width=True)
+                        else:
+                            cols[j].write(f"Image {similar_image_path} not found.")
