@@ -45,90 +45,46 @@ st.markdown("""
 </style>""", unsafe_allow_html=True)
 
 # Load Model
-model_cap_pattern = load_yolo_model('models/cap_pattern-25.pt')
-model_bottle_seal = load_yolo_model('models/bottleseal_nano_model.pt')
+model_side_QA = load_yolo_model('models/model_side_view_qa.pt')
+# model_bottle_seal = load_yolo_model('models/bottleseal_nano_model.pt')
+# model_unopened_side_view_checklist = load_yolo_model()
 # model_liquid_powder = load_yolo_model('models/model_powder_liquid_lump.pt')
-model_bottle_dent = load_yolo_model('models/model_bottle_dent-50.pt')
-model_bottle_label = load_yolo_model('models/model_bottle_label-50.pt')
-model_bottle_cap_checklist = load_yolo_model('models/cap_condition_checklist.pt')
+# model_bottle_dent = load_yolo_model('models/model_bottle_dent-50.pt')
+# model_bottle_label = load_yolo_model('models/model_bottle_label-50.pt')
+# model_bottle_cap_checklist = load_yolo_model('models/cap_condition_checklist.pt')
+
+
+from collections import defaultdict
+
+CHECKLIST = defaultdict(list)
+THINGS_TO_CHECK = {'label', 'botle_with_neckband', 'curved_shoulder'}
+
+def update_CHECKLIST(key, value):
+    CHECKLIST[key].append(value)
 
 
 def detect_top_view(image):
-    global model_cap_pattern, model_bottle_seal
-    
+    return True
+
+
+
+def detect_side_view(image, view_name, model):
     image_array = Image.open(image)
-    cap_pattern = sv.Detections.from_ultralytics(
-        model_cap_pattern(image_array)[0]
-        )
-    cap_pattern = cap_pattern.data['class_name'][0].replace('pentagon', 'HEXAGON').upper() if len(cap_pattern.xyxy) > 0 else False
-    
-    seal_packaging = sv.Detections.from_ultralytics(
-        model_bottle_seal(image_array)[0]
-        )
-    seal_packaging = seal_packaging.data['class_name'][0].upper() if len(seal_packaging.xyxy) > 0 else False
-    
 
-    
+    result = model(image_array)[0]
+    detections = sv.Detections.from_ultralytics(result)
+    detections[detections.confidence > .60]
+    for thing in THINGS_TO_CHECK:
+        if thing in detections.data['class_name']:
+            update_CHECKLIST(thing, True)
 
-    return {
-        'Cap Present': True if cap_pattern in ['CAP_NO_PATTERN', 'CAP_HEXAGON_PATTERN'] else False,
-        "Cap Pattern": cap_pattern,
-        "Cap Damage": False,
-        "Seal Packaging": seal_packaging,
-        "Cap Opened": False,
-        "Pill Count": 0,
-        "Pill Shape": False,
-        "Pill Color": False,
-        "Desiccant": False,
-        "Powder Texture": False,
-        "Scoop": False,
-        "Scoop Size": False,
-        "Lumps": False,
-        "OCR Text": False
-    }
+    return True
 
 def detect_bottom_view(image):
     return {
         "OCR Text": "LOT123, Exp: 2025-12-31, Price: $20, Material Type: Plastic"
     }
 
-def detect_side_view(image, view_name):
-    global model_bottle_dent, model_bottle_label
-
-    image_array = Image.open(image)
-
-    result_bottle_dent = sv.Detections.from_ultralytics(
-        model_bottle_dent(image_array)[0]
-    )
-    result_bottle_dent = result_bottle_dent.data['class_name'][0].upper() if len(result_bottle_dent.xyxy) > 0 else False
-
-    result_bottle_label = sv.Detections.from_ultralytics(
-        model_bottle_label(image_array)[0]
-    )
-    result_bottle_label = result_bottle_label.data['class_name'][0].upper() if len(result_bottle_label.xyxy) > 0 else False
-
-
-    result_bottle_cap_checklist = sv.Detections.from_ultralytics(
-        model_bottle_cap_checklist(image_array)[0]
-    )
-    result_bottle_cap_checklist = result_bottle_cap_checklist.data['class_name'][0].upper() if len(result_bottle_cap_checklist.xyxy) > 0 else False
-
-
-
-    return {
-        f"{view_name}: Cap Condition": False,
-        f"{view_name}: Volume": False,
-        f"{view_name}: Neckband": False,
-        f"{view_name}: Shoulder Shape": False,
-        f"{view_name}: Label Issue": result_bottle_label,
-        f"{view_name}: Ointment Tube": False,
-        f"{view_name}: Bottle Crumbled": False,
-        f"{view_name}: Bottle Cracked": False,
-        f"{view_name}: Bottle Dent": result_bottle_dent,
-        f"{view_name}: Bottle Scratch": False,
-        f"{view_name}: Dropper Detected": False,
-        f"{view_name}: Dropper Cap Detected": False
-    }
 
 
 st.title("Product Inspection Dashboard")
@@ -164,6 +120,7 @@ def display_checklist(results, view_name):
     idx = 0
     for key, value in results.items():
         col = cols[idx % 4]
+        value = all(value)
         if value:
             col.checkbox(f"{key}: {value}", value=True, key=f"{view_name}_{key}")
         else:
@@ -172,19 +129,15 @@ def display_checklist(results, view_name):
 
 
 def merge_side_view_analysis(images):
-    side_view_results = {}
+    
     for view_name, image in images.items():
         if image:
-            view_results = detect_side_view(image, view_name)
-            side_view_results.update(view_results)
-    return side_view_results
+            view_results = detect_side_view(image, view_name, model=model_side_QA)
+    return True
 
-# Store results
 all_results = {}
-
-# Display analysis results with unique keys
 if top_view_img:
-    st.subheader("Top View Analysis")
+    st.subheader("Unopened Bottle Checklist")
     top_view_results = detect_top_view(top_view_img)
     all_results["Top View"] = top_view_results
     display_checklist(top_view_results, "Top")
@@ -203,11 +156,10 @@ side_images = {
     "Back": back_view_img
 }
 
-side_view_results = merge_side_view_analysis(side_images)
-if side_view_results:
+# side_view_results = merge_side_view_analysis(side_images)
+if left_view_img and right_view_img and front_view_img and back_view_img:
     st.subheader("Side View Analysis (Left, Right, Front, Back)")
-    all_results["Side View"] = side_view_results
-    display_checklist(side_view_results, "Side")
+    display_checklist(CHECKLIST, "Side")
 
 def generate_pdf(results):
     pdf = FPDF()
