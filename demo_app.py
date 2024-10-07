@@ -1,21 +1,20 @@
 import streamlit as st
 from fpdf import FPDF
 from docx import Document
-from PIL import Image
 import io
 from tools import load_yolo_model
 from PIL import Image
 import supervision as sv
 import numpy as np
-
-
+import cv2
+from PIL import Image, ExifTags
 
 favicon = Image.open("/workspaces/canprev-modules/CanPrev_4D-logo.png")
 st.set_page_config(
-    page_title="Canprev AI",  # Title of the web page
-    page_icon=favicon,                # Favicon, use emoji or a file path
-    layout="wide",                       # Layout options: "wide" or "centered"
-    initial_sidebar_state="expanded"     # Initial state of the sidebar: "auto", "expanded", or "collapsed"
+    page_title="Canprev AI",
+    page_icon=favicon,
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 st.image('CanPrev_4D-logo.png', width=300)
 st.markdown("""
@@ -58,10 +57,32 @@ from collections import defaultdict
 
 CHECKLIST = defaultdict(list)
 THINGS_TO_CHECK = {'label', 'botle_with_neckband', 'curved_shoulder'}
+THINGS_TO_CHECK_MAP = {'label': 'Label Check', 'botle_with_neckband': 'Neckband Check', 'curved_shoulder': 'Shoulder Check'}
+
 
 def update_CHECKLIST(key, value):
     CHECKLIST[key].append(value)
 
+
+def correct_image_orientation(image):
+    """Correct the orientation of an image based on its EXIF data."""
+    try:
+        for orientation in ExifTags.TAGS.keys():
+            if ExifTags.TAGS[orientation] == 'Orientation':
+                break
+
+        exif = image._getexif()
+        if exif is not None:
+            orientation = exif.get(orientation)
+            if orientation == 3:
+                image = image.rotate(180, expand=True)
+            elif orientation == 6:
+                image = image.rotate(270, expand=True)
+            elif orientation == 8:
+                image = image.rotate(90, expand=True)
+    except (AttributeError, KeyError, IndexError):
+        pass
+    return image
 
 def detect_top_view(image):
     return True
@@ -69,16 +90,21 @@ def detect_top_view(image):
 
 
 def detect_side_view(image, view_name, model):
-    image_array = Image.open(image)
 
-    result = model(image_array)[0]
+    result = model(image)[0]
     detections = sv.Detections.from_ultralytics(result)
-    detections[detections.confidence > .60]
-    for thing in THINGS_TO_CHECK:
-        if thing in detections.data['class_name']:
-            update_CHECKLIST(thing, True)
+    detections = detections[detections.confidence > .75]
+    if len(detections.xyxy) == 0:
+        for thing in THINGS_TO_CHECK:
+            update_CHECKLIST(thing, False)
+    else:
+        for thing in THINGS_TO_CHECK:
+            if thing in detections.data['class_name']:
+                update_CHECKLIST(thing, True)
+            else:
+                update_CHECKLIST(thing, False)
 
-    return True
+    return result.plot()
 
 def detect_bottom_view(image):
     return {
@@ -87,30 +113,54 @@ def detect_bottom_view(image):
 
 
 
-st.title("Product Inspection Dashboard")
+st.title("Unopened - Product Inspection Dashboard")
 st.subheader("Upload Images")
 
-# First row
+
 col1, col2 = st.columns(2)
 with col1:
     top_view_img = st.file_uploader("Top View", type=["jpg", "png", "jpeg"])
 with col2:
     bottom_view_img = st.file_uploader("Bottom View", type=["jpg", "png", "jpeg"])
 
-# Second row
+
 col3, col4 = st.columns(2)
 with col3:
     left_view_img = st.file_uploader("Left View", type=["jpg", "png", "jpeg"])
+    if left_view_img is not None:
+        left_view_img = Image.open(left_view_img)
+        left_view_img = correct_image_orientation(left_view_img)
+
 with col4:
     right_view_img = st.file_uploader("Right View", type=["jpg", "png", "jpeg"])
+    if right_view_img is not None:
+        right_view_img = Image.open(right_view_img)
+        right_view_img = correct_image_orientation(right_view_img)
 
-# Third row
+
+
 col5, col6 = st.columns(2)
 with col5:
     front_view_img = st.file_uploader("Front View", type=["jpg", "png", "jpeg"])
+    if front_view_img is not None:
+        front_view_img = Image.open(front_view_img)
+        front_view_img = correct_image_orientation(front_view_img)
+
 with col6:
     back_view_img = st.file_uploader("Back View", type=["jpg", "png", "jpeg"])
+    if back_view_img is not None:
+        back_view_img = Image.open(back_view_img)
+        back_view_img = correct_image_orientation(back_view_img)
 
+
+
+st.divider()
+
+left, right, front, back = st.columns(4)
+with left: left_view_panel = st.empty()
+with right: right_view_panel = st.empty()
+with front: front_view_panel = st.empty()
+with back: back_view_panel = st.empty()
 
 st.divider()
 
@@ -121,6 +171,7 @@ def display_checklist(results, view_name):
     for key, value in results.items():
         col = cols[idx % 4]
         value = all(value)
+        key = THINGS_TO_CHECK_MAP[key]
         if value:
             col.checkbox(f"{key}: {value}", value=True, key=f"{view_name}_{key}")
         else:
@@ -128,11 +179,12 @@ def display_checklist(results, view_name):
         idx += 1
 
 
-def merge_side_view_analysis(images):
-    
+def merge_side_view_analysis(images, annotation_view_panels):
+
     for view_name, image in images.items():
         if image:
-            view_results = detect_side_view(image, view_name, model=model_side_QA)
+            annotated_view = detect_side_view(image, view_name, model=model_side_QA)
+            annotation_view_panels[view_name].image(annotated_view, channels='bgr')
     return True
 
 all_results = {}
@@ -155,10 +207,19 @@ side_images = {
     "Front": front_view_img,
     "Back": back_view_img
 }
+annotation_view_panels = {
+    "Left": left_view_panel,
+    "Right": right_view_panel,
+    "Front": front_view_panel,
+    "Back": back_view_panel
+}
 
-# side_view_results = merge_side_view_analysis(side_images)
+
 if left_view_img and right_view_img and front_view_img and back_view_img:
-    st.subheader("Side View Analysis (Left, Right, Front, Back)")
+
+    st.subheader("Side View Checks (Left, Right, Front, Back)")
+    merge_side_view_analysis(side_images, annotation_view_panels=annotation_view_panels)
+    print(CHECKLIST)
     display_checklist(CHECKLIST, "Side")
 
 def generate_pdf(results):
